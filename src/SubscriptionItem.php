@@ -386,7 +386,7 @@ class SubscriptionItem extends Model
      */
     public function asStripeSubscriptionItem(array $expand = [])
     {
-        return $this->subscription->owner->stripe()->subscriptionItems->retrieve(
+        return $this->loadMissing('subscription.owner')->subscription->owner->stripe()->subscriptionItems->retrieve(
             $this->stripe_id, ['expand' => $expand]
         );
     }

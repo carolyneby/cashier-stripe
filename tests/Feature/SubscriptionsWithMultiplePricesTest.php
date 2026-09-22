@@ -3,6 +3,7 @@
 namespace Laravel\Cashier\Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -118,6 +119,25 @@ class SubscriptionsWithMultiplePricesTest extends FeatureTestCase
         $this->assertSame(self::$taxRateId, Arr::first($otherItem->asStripeSubscriptionItem()->tax_rates)->id);
         $this->assertSame(self::$premiumPriceId, $premiumItem->stripe_price);
         $this->assertSame(5, $premiumItem->quantity);
+    }
+
+    public function test_current_period_dates_do_not_trigger_lazy_loading_violation()
+    {
+        $user = $this->createCustomer('current_period_dates_do_not_trigger_lazy_loading_violation');
+
+        $subscription = $user->newSubscription('main', [self::$priceId, self::$otherPriceId])
+            ->create('pm_card_visa');
+
+        Model::preventLazyLoading();
+
+        try {
+            $freshSubscription = $subscription->fresh();
+
+            $this->assertNotNull($freshSubscription->currentPeriodStart());
+            $this->assertNotNull($freshSubscription->currentPeriodEnd());
+        } finally {
+            Model::preventLazyLoading(false);
+        }
     }
 
     public function test_customers_can_add_prices()
